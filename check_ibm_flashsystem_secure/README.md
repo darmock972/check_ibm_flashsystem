@@ -167,6 +167,12 @@ The plugin uses a single Nagios perfdata separator (`|`). Everything before `|` 
 - Do not commit credentials, tokens, real hostnames, or production IPs.
 - Use HTTPS only. The plugin disables certificate validation by default because many arrays use self-signed certificates; consider adding certificate validation support in environments with internal CA certificates.
 
+<h2>Screenshot</h2>
+
+<p align="center">
+  <img src="Screenshots/nagios_ok.png" alt="Nagios IBM FlashSystem Plugin" width="900">
+</p>
+
 ## License
 
 MIT
