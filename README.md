@@ -1,178 +1,248 @@
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![License](https://img.shields.io/github/license/darmock972/check_ibm_flashsystem)
+![GitHub release](https://img.shields.io/github/v/release/darmock972/check_ibm_flashsystem)
+
 # check_ibm_flashsystem
 
-Nagios Core plugin for IBM FlashSystem / IBM Storage Virtualize using the REST API.
+A Nagios Core plugin for monitoring **IBM FlashSystem** and **IBM Storage Virtualize** systems using the native REST API.
 
-This release is intentionally sanitized for public GitHub use:
+The plugin performs hardware and storage health checks without requiring SNMP, and returns Nagios-compatible status codes and performance data.
 
-- No real IP addresses
-- No real usernames
-- No passwords in examples
-- No tokens in examples
-- No command-line password option
-- Credentials are supplied only by password file or environment variable
+---
 
-Tested with IBM Storage Virtualize 9.1.x.
+## Features
 
-## Checks
+- REST API monitoring
+- Node canister health
+- Drive health
+- Storage pool monitoring
+- Storage pool capacity thresholds
+- Enclosure monitoring
+- Power supply monitoring
+- Battery monitoring
+- Nagios performance data
+- Secure password file authentication
+- Python 3.8+
 
-- REST API connectivity
-- Authentication
-- System name and code level
+---
+
+## Screenshot
+
+Nagios Core monitoring an IBM FlashSystem.
+
+![Nagios Screenshot](Screenshots/nagios_ok.png)
+
+---
+
+## Requirements
+
+- Nagios Core
+- Python 3.8 or newer
+- Python `requests` module
+- IBM FlashSystem / IBM Storage Virtualize with REST API enabled
+
+Install the required Python module:
+
+```bash
+pip3 install requests
+```
+
+---
+
+# Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/darmock972/check_ibm_flashsystem.git
+cd check_ibm_flashsystem
+```
+
+Copy the plugin:
+
+```bash
+sudo cp check_ibm_flashsystem.py /usr/local/nagios/libexec/
+sudo chmod +x /usr/local/nagios/libexec/check_ibm_flashsystem.py
+```
+
+---
+
+# Creating a Monitoring User
+
+For security reasons, **do not use the built-in `superuser` account** for monitoring.
+
+Create a dedicated monitoring account with the minimum permissions required to read system status through the REST API.
+
+The monitoring account should be able to read:
+
+- System information
 - Node canisters
 - Drives
-- Storage pools and pool utilization
+- Storage pools
 - Enclosures
 - Power supplies
 - Batteries
 
-## Requirements
+The account should **not** have permissions to modify the storage system.
 
-- Python 3.8+
-- `requests`
+## Local Authentication
 
-Install dependency:
+Create a local monitoring user from the FlashSystem GUI or CLI and assign it the appropriate **read-only** or **monitoring** role available in your Storage Virtualize version.
+
+## LDAP / Active Directory
+
+If your FlashSystem authenticates against LDAP or Active Directory, create a dedicated monitoring account and assign it the equivalent read-only role.
+
+---
+
+# Secure Password Storage
+
+Store the password in a file readable only by the Nagios user.
 
 ```bash
-pip3 install -r requirements.txt
+sudo mkdir -p /etc/nagios/secrets
+
+sudo nano /etc/nagios/secrets/flashsystem.pass
+
+sudo chown nagios:nagios /etc/nagios/secrets/flashsystem.pass
+
+sudo chmod 600 /etc/nagios/secrets/flashsystem.pass
 ```
 
-On Debian/Ubuntu systems you can also use:
+The password file should contain **only the password**.
 
-```bash
-apt install python3-requests
+Example:
+
+```text
+MyVeryStrongPassword
 ```
 
-## Secure credential handling
+---
 
-Do not put storage passwords directly on the command line or inside public Git repositories.
+# Testing the Plugin
 
-Recommended method: password file readable only by the Nagios user.
-
-```bash
-install -o nagios -g nagios -m 600 /dev/null /etc/nagios/flashsystem.pass
-nano /etc/nagios/flashsystem.pass
-chmod 600 /etc/nagios/flashsystem.pass
-chown nagios:nagios /etc/nagios/flashsystem.pass
-```
-
-The file should contain only the FlashSystem monitoring user's password.
-
-Alternative method: environment variable.
+Run the plugin manually before adding it to Nagios.
 
 ```bash
-export FLASHSYSTEM_PASSWORD='your_password_here'
-```
-
-Do not commit password files, token files, shell history, or `.env` files to Git.
-
-## Usage
-
-Using a password file:
-
-```bash
-./check_ibm_flashsystem.py \
-  -H flashsystem.example.local \
-  -u monitoring_user \
-  --password-file /etc/nagios/flashsystem.pass
-```
-
-Using an environment variable:
-
-```bash
-./check_ibm_flashsystem.py \
-  -H flashsystem.example.local \
-  -u monitoring_user \
-  --password-env FLASHSYSTEM_PASSWORD
-```
-
-With custom pool thresholds:
-
-```bash
-./check_ibm_flashsystem.py \
-  -H flashsystem.example.local \
-  -u monitoring_user \
-  --password-file /etc/nagios/flashsystem.pass \
-  -w 80 \
-  -c 90
+check_ibm_flashsystem.py \
+    -H 192.168.1.100 \
+    -u nagios \
+    --password-file /etc/nagios/secrets/flashsystem.pass
 ```
 
 Example output:
 
 ```text
-OK - FlashSystem-01: Code 9.1.x, Nodes 2/2, Drives 12/12, Pool_01 67.8%, Enclosures 1/1, PSU 2/2, Batteries 2/2 | nodes_ok=2 nodes_total=2 drives_ok=12 drives_total=12 pool_Pool_01_used=67.80%;80.0;90.0;0;100
+OK - Claus-IBM: Nodes 2/2, Drives 12/12, PoolDR 67.8%, PSU 2/2, Batteries 2/2, FW 9.1.0.4
 ```
 
-## Options
+---
 
-```text
--H, --host              FlashSystem management IP or hostname
---port                 REST API port, default: 7443
--u, --username          FlashSystem monitoring username
---password-file         File containing the password
---password-env          Environment variable containing the password
--w, --warning           Pool utilization warning threshold, default: 80
--c, --critical          Pool utilization critical threshold, default: 90
---battery-min-charge    Battery minimum charge warning threshold, default: 80
---timeout               REST API timeout in seconds, default: 10
---json                  Output JSON instead of Nagios text
---version               Show plugin version
--v, --verbose           Add verbose details
---ignore-enclosure      Skip enclosure check
---ignore-psu            Skip PSU check
---ignore-batteries      Skip battery check
---ignore-pools          Skip pool check
-```
+# Nagios Configuration
 
-## Nagios command example
+## commands.cfg
 
 ```cfg
 define command{
     command_name    check_ibm_flashsystem
-    command_line    $USER1$/check_ibm_flashsystem.py -H $HOSTADDRESS$ -u $ARG1$ --password-file $ARG2$ -w $ARG3$ -c $ARG4$
+    command_line    $USER1$/check_ibm_flashsystem.py \
+                    -H $HOSTADDRESS$ \
+                    -u $ARG1$ \
+                    --password-file $ARG2$
 }
 ```
 
-## Nagios host example
+---
+
+## hosts.cfg
 
 ```cfg
 define host{
-    use         generic-switch
-    host_name   flashsystem-01
-    alias       IBM FlashSystem 01
-    address     flashsystem.example.local
+    use         linux-server
+    host_name   IBM-FS01
+    alias       IBM FlashSystem
+    address     192.168.1.100
 }
 ```
 
-## Nagios service example
+---
+
+## services.cfg
 
 ```cfg
 define service{
     use                     generic-service
-    host_name               flashsystem-01
+    host_name               IBM-FS01
     service_description     IBM FlashSystem Health
-    check_command           check_ibm_flashsystem!monitoring_user!/etc/nagios/flashsystem.pass!80!90
+    check_command           check_ibm_flashsystem!nagios!/etc/nagios/secrets/flashsystem.pass
 }
 ```
 
-## Nagios output format
+---
 
-The plugin uses a single Nagios perfdata separator (`|`). Everything before `|` is human-readable status text shown in the Nagios UI. Everything after `|` is perfdata.
+# Example Output
 
-## Security notes
+```text
+OK - Claus-IBM: Nodes 2/2, Drives 12/12, PoolDR 67.8%, PSU 2/2, Batteries 2/2, FW 9.1.0.4 | nodes_ok=2 drives_ok=12 pool_PoolDR_used=67.80%;80;90;0;100
+```
 
-- Create a dedicated read-only monitoring user on the FlashSystem.
-- Do not use `superuser` for monitoring.
-- Do not pass the password directly as a command-line argument.
-- Restrict password file permissions to the Nagios service account.
-- Do not commit credentials, tokens, real hostnames, or production IPs.
-- Use HTTPS only. The plugin disables certificate validation by default because many arrays use self-signed certificates; consider adding certificate validation support in environments with internal CA certificates.
+---
 
-<h2>Screenshot</h2>
+# Tested Hardware
 
-<p align="center">
-  <img src="Screenshots/nagios_ok.png" alt="Nagios IBM FlashSystem Plugin" width="900">
-</p>
+The plugin has been tested on:
 
-## License
+| Hardware | Firmware | Status |
+|----------|----------|--------|
+| IBM FlashSystem | Storage Virtualize 9.1.0.4 | ✅ Tested |
 
-MIT
+Additional hardware and firmware versions are welcome. Feel free to open an issue or submit a pull request if you've successfully tested the plugin on another platform.
+
+---
+
+# Roadmap
+
+## Version 1.x
+
+- ✅ REST API monitoring
+- ✅ Node canisters
+- ✅ Drive health
+- ✅ Storage pools
+- ✅ Pool capacity thresholds
+- ✅ Enclosure monitoring
+- ✅ Power supplies
+- ✅ Batteries
+
+## Planned Features
+
+- FC port monitoring
+- Host port monitoring
+- Replication health
+- Volume monitoring
+- Additional enclosure hardware checks
+- Improved verbose output
+
+---
+
+# Contributing
+
+Bug reports, feature requests and pull requests are welcome.
+
+If you successfully test the plugin on another FlashSystem model or Storage Virtualize version, please consider contributing your results.
+
+---
+---
+
+# Disclaimer
+
+This project is an independent open-source Nagios plugin and is **not affiliated with, endorsed by, or supported by IBM**.
+
+IBM®, FlashSystem®, and Storage Virtualize® are trademarks of International Business Machines Corporation.
+
+Use this software at your own risk. Always test new versions in a non-production environment before deploying them into production.
+
+# License
+
+This project is licensed under the MIT License.
+
+See the **LICENSE** file for details.
