@@ -133,7 +133,7 @@ check_ibm_flashsystem.py \
 Example output:
 
 ```text
-OK - Claus-IBM: Nodes 2/2, Drives 12/12, PoolDR 67.8%, PSU 2/2, Batteries 2/2, FW 9.1.0.4
+OK - IBM: Nodes 2/2, Drives 12/12, PoolDR 67.8%, PSU 2/2, Batteries 2/2, FW 9.1.0.4
 ```
 
 ---
@@ -183,7 +183,7 @@ define service{
 # Example Output
 
 ```text
-OK - Claus-IBM: Nodes 2/2, Drives 12/12, PoolDR 67.8%, PSU 2/2, Batteries 2/2, FW 9.1.0.4 | nodes_ok=2 drives_ok=12 pool_PoolDR_used=67.80%;80;90;0;100
+OK - IBM: Nodes 2/2, Drives 12/12, PoolDR 67.8%, PSU 2/2, Batteries 2/2, FW 9.1.0.4 | nodes_ok=2 drives_ok=12 pool_PoolDR_used=67.80%;80;90;0;100
 ```
 
 ---
