@@ -408,8 +408,6 @@ def check_batteries(api: FlashSystemAPI, result: NagiosResult, min_charge: int) 
 
         if status != "online":
             bad.append(f"{label} status={status}")
-        if charging_status != "charged":
-            warn.append(f"{label} charging_status={charging_status}")
         if recondition_needed == "yes":
             warn.append(f"{label} recondition needed")
         if end_of_life_warning == "yes":
